@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script sync src="opencv.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+    <div style="width: 100%;">
+        <input type="file" id="fileInput" name="file" />
+        <button id="correct">矫正</button>
+    </div>
+    <image src="" style="display: none;" id="image"/>
+    <div>
+        <canvas id="origin" width="800px" height="800px"></canvas>
+        <canvas id="after"  width="800px" height="800px"></canvas>
+    </div>
+
+    <script>
+
+
+        let origin = document.getElementById("origin");
+        let ctx_origin = origin.getContext('2d');
+
+        let imgElement = document.getElementById('image');
+        let inputElement = document.getElementById('fileInput');
+        let correctButton = document.getElementById('correct');
+
+
+        inputElement.addEventListener('change', (e) => {
+            imgElement.src = URL.createObjectURL(e.target.files[0]);
+        }, false);
+        // 获取宽、高
+        var width = document.documentElement.clientWidth;
+        var height = document.documentElement.clientHeight;
+
+        origin.width = width;
+        origin.height = height;
+
+        console.log(width);
+        console.log(height);
+        // 创建一个图片
+        let after = document.getElementById("after");
+        var ctx_after = after.getContext("2d");
+        var im2 = ctx_after.createImageData(width, height);
+
+        var dots = [
+            // { X: 0, Y: 0 },           // O
+            // { X: 800, Y: 0 },         // A
+            // { X: 600, Y: 800 },       // D
+            // { X: 200, Y: 800 }        // B
+        ]
+
+        function left(y) {
+            return (y - dots[0].Y) * (dots[3].X - dots[0].X) / (dots[3].Y - dots[0].Y) + dots[0].X;
+        }
+
+        function right(y) {
+            return (y - dots[1].Y) * (dots[2].X - dots[1].X) / (dots[2].Y - dots[1].Y) + dots[1].X;
+        }
+        var im;
+        let src;
+        imgElement.onload = function () {
+            src = cv.imread(imgElement);
+            console.log(im)
+            cv.imshow('origin', src);
+            im = ctx_origin.getImageData(0, 0, width, height);
+            // ctx_origin.drawImage(img, 0, 0);
+            // im = ctx_origin.getImageData(0, 0, width, height);
+            // 处理图片，显示到after canvas
+
+            // // 添加像素点
+            // for (let y = 0; y < height; y++) {
+            //     let l = left(y);
+            //     let r = right(y);
+            //     // console.log(l,r)
+            //     for (let x = 0; x < width; x++) {
+            //         // 源(x, y) ==> i
+            //         let i = (y * width + x) * 4;
+            //         // 目的 y 不变，x拉升为x_
+            //         let x_ = (r - l) * (x - l) / (dots[1].X - dots[0].X);
+            //         // let x_;
+            //         // if (x < 400) {
+            //         //     x_ = 400 - (400 - x) * (400 - l) / 400;
+            //         //     // console.log(x_);
+            //         // } else {
+            //         //     x_ = 400 + (r - 400) * (x - 400) / 400;
+            //         // }
+            //         x_ = parseInt(x_);
+            //         if (x == 799) {
+            //             console.log(x + '==>' + x_)
+            //             console.log(l);
+            //         }
+            //         let i_ = (y * width + x_) * 4;
+
+            //         im2.data[i + 0] = im.data[i_ + 0];
+            //         im2.data[i + 1] = im.data[i_ + 1];
+            //         im2.data[i + 2] = im.data[i_ + 2];
+            //         im2.data[i + 3] = im.data[i_ + 3];
+            //     }
+            // }
+            // console.log(left(600));
+            // console.log(right(600));
+            // repaint();
+
+            // // 显示到canvas
+            ctx_after.putImageData(im, 0, 0);
+        }
+
+        function correct() {
+            let dst = new cv.Mat();
+            let dsize = new cv.Size(src.rows, src.cols);
+            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [dots[0].X, dots[0].Y, dots[1].X, dots[1].Y,dots[3].X,dots[3].Y,dots[2].X,dots[2].Y]);
+            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 800, 0, 0, 800, 800, 800]);
+            let M = cv.getPerspectiveTransform(srcTri, dstTri);
+            // You can try more different parameters
+            cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+            cv.imshow('after', dst);
+            src.delete(); dst.delete(); M.delete(); srcTri.delete(); dstTri.delete();
+        }
+
+
+
+        // 注册事件
+        origin.onmousedown = mouseDown;     // 按下
+        origin.onmousemove = mouseMove      // 移动
+        origin.onmouseup = mouseUp;         // 松开      
+        correctButton.onclick = correct;
+
+
+
+        // let dots = [];
+        let radius = 10;
+        let tag = [false, false, false, false]
+
+        function repaint() {
+            // 绘制待处理的图片
+            ctx_origin.putImageData(im, 0, 0);
+            // 绘制顶点
+            for (let i = 0; i < 4; i++) {
+                ctx_origin.beginPath();
+                X = dots[i].X;
+                Y = dots[i].Y;
+                ctx_origin.arc(X, Y, radius / 2, 0, 2 * Math.PI);
+                ctx_origin.stroke();
+                ctx_origin.fill();
+            }
+            // 绘制边
+            ctx_origin.beginPath();
+            ctx_origin.lineWidth = 10;
+            for (let i = 0; i < 4; i++) {
+                let x = dots[i].X;
+                let y = dots[i].Y;
+                ctx_origin.moveTo(x, y);
+                ctx_origin.lineTo(dots[(i + 1) % 4].X, dots[(i + 1) % 4].Y);
+            }
+            ctx_origin.stroke();
+        }
+
+
+        // 鼠标按下事件，记录起始坐标值
+        function mouseDown(e) {
+            X = e.offsetX;
+            Y = e.offsetY;
+            if (dots.length >= 4) {
+                // 判断一下是否有点正在拖动
+                for (let i = 0; i < 4; i++) {
+                    let dis = Math.sqrt((dots[i].X - X) * (dots[i].X - X) + (dots[i].Y - Y) * (dots[i].Y - Y));
+                    if (dis < 50) {
+                        tag[i] = true;
+                        console.log("正在拖动:" + i);
+                        break;
+                    }
+                }
+            } else {
+                dots.push({ X, Y });
+                ctx_origin.beginPath();
+                ctx_origin.arc(X, Y, radius, 0, 2 * Math.PI);
+                ctx_origin.stroke();
+                ctx_origin.fill();
+                if (dots.length >= 4)
+                    repaint();
+            }
+        }
+
+        function mouseUp(e) {
+            // 清空拖动的tag
+            for (let i = 0; i < 4; i++) {
+                tag[i] = false;
+            }
+        }
+
+
+        function mouseMove(e) {
+            if (dots.length < 4)
+                return;
+            // 在拖动的点
+            X = e.offsetX;
+            Y = e.offsetY;
+            for (let i = 0; i < 4; i++) {
+                if (tag[i]) {
+                    dots[i] = { X, Y };
+                }
+            }
+            repaint();
+        }
+
+
+
+
+    </script>
+
+
+</body>
+
+</html>
