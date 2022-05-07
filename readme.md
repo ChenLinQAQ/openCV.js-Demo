@@ -43,9 +43,11 @@
    1. 通过base64编码，在Android中获取到图片资源，然后通过编码成base64，再通过<b>WebView</b>调用JS中的方法，传递参数，在JS中解析成Image，这样的确解决了跨域的问题。
 
       但是后来使用OpenCV的方法的时候，调用这个Image对象会报错，未找到解决的办法。
-
-    1. 通过<b><input type = "file"/ ></b>打开文件，但是同样的遇到了问题，Android会禁止对这个<b>input</b>的响应，在网上找到的解决办法是为<b>WebView重写WebClient中 onShowFileChooser方法</b>，测试的确可行。
-
+      
+   2. 通过<b><input type = "file"/ ></b>打开文件，但是同样的遇到了问题，Android会禁止对这个<b>input</b>的响应，在网上找到的解决办法是为<b>WebView重写WebClient中        
+  
+      onShowFileChooser方法</b>，测试的确可行。
+   
 ### 5. perspective.html
 
 这个是为了动态适配Android屏幕做的版本。
