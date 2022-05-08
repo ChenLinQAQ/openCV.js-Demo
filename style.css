@@ -19,7 +19,10 @@ body {
 }
 
 #img-input {
+}
 
+#canvas-save {
+    display: none;
 }
 
 .stage {
@@ -39,8 +42,20 @@ body {
 
 .divider {
     height: 1px;
-    background-color: #333;
+    background-image: repeating-linear-gradient(to right, #888, #888 8px, transparent 8px, transparent 16px);
     margin: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.divider > button {
+    border: none;
+    border-radius: 8px;
+    padding: 5px 10px;
+    background-color: #1897ff;
+    color: white;
+    margin: 0 5px;
 }
 
 canvas {

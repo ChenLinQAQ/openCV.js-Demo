@@ -114,12 +114,12 @@
 
         function correct() {
             let dst = new cv.Mat();
-            let dsize = new cv.Size(src.rows, src.cols);
-            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [dots[0].X, dots[0].Y, dots[1].X, dots[1].Y,dots[3].X,dots[3].Y,dots[2].X,dots[2].Y]);
-            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 800, 0, 0, 800, 800, 800]);
+            let dsize = new cv.Size(src.cols, src.rows);
+            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [dots[0].X, dots[0].Y, dots[1].X, dots[1].Y,dots[2].X,dots[2].Y,dots[3].X,dots[3].Y]);
+            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, 800, 0, 800, 800, 0, 800]);
             let M = cv.getPerspectiveTransform(srcTri, dstTri);
             // You can try more different parameters
-            cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+            cv.warpPerspective(src, dst, M, dsize);
             cv.imshow('after', dst);
             src.delete(); dst.delete(); M.delete(); srcTri.delete(); dstTri.delete();
         }
